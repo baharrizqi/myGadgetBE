@@ -36,6 +36,9 @@ public class ProductController {
 	@Autowired
 	private PaketRepo paketRepo;
 	
+	double total = 0;
+	int total2 = 9999;
+	
 	@GetMapping("/readProduct")
 	public Iterable<Product> getAllProduct(){
 		return productRepo.findAll();
@@ -63,11 +66,34 @@ public class ProductController {
 		
 		return productRepo.save(findProduct);
 	}
+	
+	// edit product
 	@PutMapping("/{productId}")
 	public Product editProduct(@RequestBody Product product,@PathVariable int productId) {
 		Product findProduct = productRepo.findById(productId).get();
 		product.setId(productId);
 		product.setCategories(findProduct.getCategories());
+		product.setPaket(findProduct.getPaket());
+		total2=9999;
+		if (findProduct.getPaket() != null) {			
+//			System.out.println(findProduct.getPrice());
+//			System.out.println(findProduct.getPaket().getHargaPaket());
+//			System.out.println(product.getPrice());
+			findProduct.getPaket().setHargaPaket(findProduct.getPaket().getHargaPaket() - findProduct.getPrice() + product.getPrice());
+			productRepo.save(product);
+			findProduct.setStock(product.getStock());
+			findProduct.getPaket().setStockPaket(0);
+			System.out.println(findProduct.getPaket().getStockPaket());
+			paketRepo.save(findProduct.getPaket());
+			findProduct.getPaket().getProducts().forEach(val ->{
+				if (total2 > val.getStock()) {
+					total2 = val.getStock();
+				}
+			});
+			findProduct.getPaket().setStockPaket(total2);
+			paketRepo.save(findProduct.getPaket());
+		}
+		
 		return productRepo.save(product);
 	}
 	
@@ -81,8 +107,10 @@ public class ProductController {
 			categoryProduct.remove(findProduct);
 			categoryRepo.save(category);
 		});
+		findProduct.setPaket(null);
 		findProduct.setCategories(null);
 		productRepo.deleteById(id);
+		
 	}
 	
 	@DeleteMapping("/delete/{productId}/category/{categoryId}")
@@ -98,77 +126,96 @@ public class ProductController {
 
 	// Filter dan sort
 	@GetMapping("/custom/{orderByType}/{orderByNamePrice}/{page}")
-	public Iterable<Product> customQueryGet(@RequestParam double minPrice,@RequestParam double maxPrice,@RequestParam String namaProduk,@RequestParam String categoryName,@PathVariable String orderByType,@PathVariable String orderByNamePrice,@PathVariable int page){
+	public Iterable<Product> customQueryGet(@RequestParam double minPrice,@RequestParam double maxPrice,@RequestParam String namaProduk,@RequestParam String merek,@RequestParam String categoryName,@PathVariable String orderByType,@PathVariable String orderByNamePrice,@PathVariable int page){
 		if(maxPrice == 0) {
 			maxPrice = 99999999;
 		}
 		if (orderByType.equals("productName") && orderByNamePrice.equals("asc") ) {
-			return productRepo.findProductByProductNameASC(minPrice,maxPrice,namaProduk,categoryName,page);
+			return productRepo.findProductByProductNameASC(minPrice,maxPrice,namaProduk,merek,categoryName,page);
 		}
 		else if (orderByType.equals("productName") && orderByNamePrice.equals("desc")) {
-			return productRepo.findProductByProductNameDESC(minPrice,maxPrice,namaProduk,categoryName,page);	
+			return productRepo.findProductByProductNameDESC(minPrice,maxPrice,namaProduk,merek,categoryName,page);	
 		}
 		else if (orderByType.equals("price") && orderByNamePrice.equals("asc")) {
-			return productRepo.findProductByPriceASC(minPrice,maxPrice,namaProduk,categoryName,page);
+			return productRepo.findProductByPriceASC(minPrice,maxPrice,namaProduk,merek,categoryName,page);
 		}
 		else if(orderByType.equals("price") && orderByNamePrice.equals("desc")) {
-			return productRepo.findProductByPriceDESC(minPrice,maxPrice,namaProduk,categoryName,page);
+			return productRepo.findProductByPriceDESC(minPrice,maxPrice,namaProduk,merek,categoryName,page);
 		}
 		else if(orderByType.equals("sold") && orderByNamePrice.equals("asc")) {
-			return productRepo.findProductBySoldASC(minPrice,maxPrice,namaProduk,categoryName,page);
+			return productRepo.findProductBySoldASC(minPrice,maxPrice,namaProduk,merek,categoryName,page);
 		}
 		else {
-			return productRepo.findProductBySoldDESC(minPrice,maxPrice,namaProduk,categoryName,page);
+			return productRepo.findProductBySoldDESC(minPrice,maxPrice,namaProduk,merek,categoryName,page);
 		}
 	}
 	
 	// Count untuk Kategori Product
 	@GetMapping("/countProduct")
-	public int getCountProductCategory(@RequestParam double minPrice,@RequestParam double maxPrice,@RequestParam String namaProduk,@RequestParam String categoryName){
-		return productRepo.getCountProduct(minPrice, maxPrice, namaProduk, categoryName);
+	public int getCountProductCategory(@RequestParam double minPrice,@RequestParam double maxPrice,@RequestParam String namaProduk,@RequestParam String merek,@RequestParam String categoryName){
+		return productRepo.getCountProduct(minPrice, maxPrice, namaProduk,merek, categoryName);
 	}
 	// Count untuk ALL Product
 	@GetMapping("/countProducts")
-	public Iterable<Product> getCountProductCategoryAll(@RequestParam double minPrice,@RequestParam double maxPrice,@RequestParam String namaProduk,@RequestParam String categoryName){
-		return productRepo.getCountProductAll(minPrice, maxPrice, namaProduk, categoryName);
+	public Iterable<Product> getCountProductCategoryAll(@RequestParam double minPrice,@RequestParam double maxPrice,@RequestParam String namaProduk,@RequestParam String merek,@RequestParam String categoryName){
+		return productRepo.getCountProductAll(minPrice, maxPrice, namaProduk,merek, categoryName);
 	}
 	
-	@PostMapping("/pakets/{paketId}")
-	public Product addPaketToProduct(@RequestBody Product product,@PathVariable int paketId) {
-		Paket findPaket = paketRepo.findById(paketId).get();
-		
-		if(findPaket == null)
-			throw new RuntimeException("Paket not found");
-		
-		product.setPaket(findPaket);
-		
-		return productRepo.save(product);
-		
-	}
-	
+	// add product to paket
 	@PostMapping("{productId}/paket/{paketId}")
 	public Product addProductToPaket(@PathVariable int productId, @PathVariable int paketId) {
 		Product findProduct = productRepo.findById(productId).get();
 		Paket findPaket = paketRepo.findById(paketId).get();
-		
+		total = 0;
+		total2 = 9999;
+		findPaket.setHargaPaket(0);
+		paketRepo.save(findPaket);
 		if(findProduct.getPaket() == null) {
 			findProduct.setPaket(findPaket);
 			productRepo.save(findProduct);
+			findPaket.getProducts().forEach(product ->{
+				if(total2 > product.getStock()) {
+					total2 = product.getStock();
+				}
+				total += product.getPrice();
+			});
+			findPaket.setHargaPaket(total);
+			findPaket.setStockPaket(total2);
+			paketRepo.save(findPaket);
 			return findProduct;
 		}
 		else if (findProduct.getPaket() == findPaket) {
-			throw new RuntimeException("Product sudah ada di paket lain");
+			throw new RuntimeException("Product sudah ada di paket yang sama");
 		}
-		findProduct.setPaket(findPaket);
-		return productRepo.save(findProduct);
+		findProduct.getPaket().setHargaPaket(findProduct.getPaket().getHargaPaket()-findProduct.getPrice()); // ngurangin price ke dari produk ke paket, produk udah pindah
+		int cariIdProduct = findProduct.getPaket().getId(); // cari id di paket bossku
+		findProduct.setPaket(null); // set paket id == null
+		productRepo.save(findProduct); // kemudian di save
+		total2 = 9999;
+		Paket findPaketEditStockPaket = paketRepo.findById(cariIdProduct).get(); // cari id paket yg bekas produk
+		findPaketEditStockPaket.getProducts().forEach(product->{ // cari stok terendah bekas produk di paket dgn perulangan
+			if(total2 > product.getStock()) {
+				total2 = product.getStock();
+			}
+//			total += product.getPrice();
+		});
+		findPaketEditStockPaket.setStockPaket(total2); // id paket yg bekas produk di set stock menjadi 0 / mis 10
+		if(findPaketEditStockPaket.getHargaPaket() == 0) { // utk pencegahan logika sblm yg di atas harus pake bosku
+			findPaketEditStockPaket.setStockPaket(0);
+		}
+		paketRepo.save(findPaketEditStockPaket); // simpan paket bekas produk 
+		findProduct.setPaket(findPaket); // produk setpaket jadi find paket utk paket yg baru
+		paketRepo.save(findPaket); // save paket baru
+		total2 = 9999;
+		findPaket.getProducts().forEach(product -> { // cari produk di dlm paket dgn perulangan untuk cari stock terendah
+			if (total2 > product.getStock()) {
+				total2 = product.getStock();
+			}
+			total += product.getPrice(); // itung price utk paket yg baru
+		});
+		findPaket.setHargaPaket(total); // set harga paket 
+		findPaket.setStockPaket(total2); // set stock
+		paketRepo.save(findPaket);
+		return findProduct;
 	}
-	
-	
-	
-	
-//	@GetMapping("/category/{categoryId}")
-//	public List<Product> getProductsOfCategory(@PathVariable int categoryId){
-//		Category findCategory = categoryRepo.findById(categoryId).get();
-//		return findCategory.getProducts();
-//	}
 }

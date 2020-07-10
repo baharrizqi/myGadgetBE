@@ -42,7 +42,7 @@ public class CategoryController {
 	public Category addCategory(@RequestBody Category category) {
 		return categoryRepo.save(category);
 	}
-	
+	// Get Product dengan category tersebut
     @GetMapping("/{categoryId}/products")
     public List<Product> getProductsOfCategory(@PathVariable int categoryId){
     	Category findCategory = categoryRepo.findById(categoryId).get();

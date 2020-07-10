@@ -19,13 +19,61 @@ public class Paket {
 	private int id;
 	
 	private String paketName;
+	private double hargaPaket;
+	private String imagePaket;
+	private int stockPaket;
+	private int soldPaket;
 	
-	@OneToMany(fetch = FetchType.EAGER, mappedBy = "paket",cascade = CascadeType.ALL)
-	@JsonIgnore
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "paket",cascade = CascadeType.ALL)
+//	@JsonIgnore
 	private List<Product> products;
+	
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "paket",cascade = CascadeType.ALL)
+	@JsonIgnore
+	private List<Cart> carts;
 
 	
-	
+		
+	public List<Cart> getCarts() {
+		return carts;
+	}
+
+	public void setCarts(List<Cart> carts) {
+		this.carts = carts;
+	}
+
+	public String getImagePaket() {
+		return imagePaket;
+	}
+
+	public void setImagePaket(String imagePaket) {
+		this.imagePaket = imagePaket;
+	}
+
+	public int getSoldPaket() {
+		return soldPaket;
+	}
+
+	public void setSoldPaket(int soldPaket) {
+		this.soldPaket = soldPaket;
+	}
+
+	public int getStockPaket() {
+		return stockPaket;
+	}
+
+	public void setStockPaket(int stockPaket) {
+		this.stockPaket = stockPaket;
+	}
+
+	public double getHargaPaket() {
+		return hargaPaket;
+	}
+
+	public void setHargaPaket(double hargaPaket) {
+		this.hargaPaket = hargaPaket;
+	}
+
 	public String getPaketName() {
 		return paketName;
 	}
