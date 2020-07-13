@@ -77,8 +77,10 @@ public class PaketController {
 			}	
 		});
 		findPaket.setStockPaket(total2);  // set stock paket dengan total stock yg di dapat sblmnya
+		findPaket.setStockPaketGudang(total2);
 		if (findPaket.getHargaPaket() == 0) { // jk paket yg didapatkan harganya == 0 maka set stock 0
 			findPaket.setStockPaket(0); // set stock jadi 0 tidak jadi 9999
+			findPaket.setStockPaketGudang(0);
 		}
 		paketRepo.save(findPaket);
 	}

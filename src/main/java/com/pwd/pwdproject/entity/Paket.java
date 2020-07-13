@@ -23,6 +23,7 @@ public class Paket {
 	private String imagePaket;
 	private int stockPaket;
 	private int soldPaket;
+	private int stockPaketGudang;
 	
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "paket",cascade = CascadeType.ALL)
 //	@JsonIgnore
@@ -31,9 +32,30 @@ public class Paket {
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "paket",cascade = CascadeType.ALL)
 	@JsonIgnore
 	private List<Cart> carts;
-
 	
-		
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "paket",cascade = CascadeType.ALL)
+	@JsonIgnore
+	private List<TransactionDetail> transactionDetails;
+	
+	
+
+
+	public List<TransactionDetail> getTransactionDetails() {
+		return transactionDetails;
+	}
+
+	public void setTransactionDetails(List<TransactionDetail> transactionDetails) {
+		this.transactionDetails = transactionDetails;
+	}
+
+	public int getStockPaketGudang() {
+		return stockPaketGudang;
+	}
+
+	public void setStockPaketGudang(int stockPaketGudang) {
+		this.stockPaketGudang = stockPaketGudang;
+	}
+
 	public List<Cart> getCarts() {
 		return carts;
 	}

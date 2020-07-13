@@ -35,7 +35,9 @@ public class User {
 	@JsonIgnore
 	private List<Cart> carts;
 	
-	
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "user",cascade = CascadeType.ALL)
+	@JsonIgnore
+	private List<Transaction> transactions; 
 	
 	public List<Cart> getCarts() {
 		return carts;

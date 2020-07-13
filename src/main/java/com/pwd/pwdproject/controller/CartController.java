@@ -40,6 +40,8 @@ public class CartController {
 	@Autowired
 	private PaketRepo paketRepo;
 	
+	int total2 = 9999;
+	
 	// get semua cart
 	@GetMapping("/readCart")
 	public Iterable<Cart> getAllCart(){
@@ -91,8 +93,80 @@ public class CartController {
 	public Iterable<Cart> getCartByUser(@PathVariable int userId){
 		return cartRepo.fillCart(userId);
 	}
+	// Delete Cart
 	@DeleteMapping("/deleteCart/{cartId}")
 	public void deleteCartById(@PathVariable int cartId) {
 		cartRepo.deleteById(cartId);
+	}
+	
+//	@PutMapping("/updateQty/{userId}")
+//	public String updateQtyProductPaket(@PathVariable int userId) {
+//		Iterable<Cart> findUserCart = cartRepo.fillCart(userId);
+//		findUserCart.forEach(val -> {
+//			if(val.getPaket() == null) {
+//				Product findProduct = productRepo.findById(val.getProduct().getId()).get();
+//				findProduct.setStock(findProduct.getStock() - val.getQuantity());
+//				findProduct.getPaket().setStockPaket(0);
+//				paketRepo.save(findProduct.getPaket());
+//				findProduct.getPaket().getProducts().forEach(value->{
+//					if(total2 > value.getStock()) {
+//						total2 = value.getStock();
+//					}
+//				});
+//				findProduct.getPaket().setStockPaket(total2);
+//				paketRepo.save(findProduct.getPaket());
+//				productRepo.save(findProduct);
+//			}
+//			else {
+//				Paket findPaket = paketRepo.findById(val.getPaket().getId()).get();
+//				findPaket.setStockPaket(findPaket.getStockPaket() - val.getQuantity());
+//				findPaket.getProducts().forEach(value->{
+//					value.setStock(value.getStock() - val.getQuantity());
+//				});
+//				productRepo.saveAll(findPaket.getProducts());
+//				paketRepo.save(findPaket);
+//			}
+//		});
+//		return "product dan paket sudah terbeli";
+//	}
+	
+	
+	
+	@PutMapping("/update/{userId}")
+	public String updateQtyProductPaket(@PathVariable int userId) {
+		Iterable<Cart> findUserCart = cartRepo.fillCart(userId);
+		findUserCart.forEach(val ->{
+			if (val.getPaket()==null) {
+				Product findProduct = productRepo.findById(val.getProduct().getId()).get();
+				if (findProduct.getPaket() == null) {
+					findProduct.setStock(findProduct.getStock() - val.getQuantity());
+					productRepo.save(findProduct);
+				}
+				else {
+					findProduct.setStock(findProduct.getStock() - val.getQuantity());
+//					findProduct.getPaket().setStockPaket(0);
+//					paketRepo.save(findProduct.getPaket());
+					total2 = 9999;
+					findProduct.getPaket().getProducts().forEach(value ->{
+						if (total2 > value.getStock()) {
+							total2 = value.getStock();
+						}
+					});
+					findProduct.getPaket().setStockPaket(total2);
+					paketRepo.save(findProduct.getPaket());
+					productRepo.save(findProduct);				
+				}
+			}
+			else {
+				Paket findPaket = paketRepo.findById(val.getPaket().getId()).get();
+				findPaket.setStockPaket(findPaket.getStockPaket() - val.getQuantity());
+				findPaket.getProducts().forEach(value ->{
+					value.setStock(value.getStock() - val.getQuantity());
+				});
+				productRepo.saveAll(findPaket.getProducts());
+				paketRepo.save(findPaket);
+			}
+		});
+		return "Stock Paket dan Product Berhasil Terubah";
 	}
 }

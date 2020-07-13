@@ -71,8 +71,11 @@ public class UserController {
 			String linkToVerify = "http://localhost:8080/users/verify/" + user.getUsername() + "?token=" + verifyToken;
 			
 			String message = "<h1>Selamat! Registrasi Berhasil</h1>\n";
-			message += "Akun dengan username " + user.getUsername() + " telah terdaftar!\n";
-			message += "Klik <a href=\"" + linkToVerify + "\">link ini</a> untuk verifikasi email anda.";
+			message += "Hello, " + user.getUsername();
+			message += "<p>Please verify your account below for the Gadget Indonesia</p>";
+			message += "<p> <a style=\"text-decoration: none;\" href=\""+linkToVerify+"\"> <input style=\"background-color: red;width: 250px;color: white;height: 50px;border: none;border-radius: 5cm;\" type=\"button\" value=\"VERIFY ACCOUNT\"></a> </p>";
+			message += "<p>If this wasn't you,please ignore this email.</p>";
+			message += "<p>Thanks,Gadget Indonesia</p>";
 			emailUtil.sendEmail(user.getEmail(), "Registrasi Akun", message);
 			
 			return savedUser;
@@ -124,8 +127,12 @@ public class UserController {
 		if(findUsername.get().isVerified() == true) {
 			String verifyToken = pwEncoder.encode(findUsername.get().getUsername());
 			String linkToVerify = "http://localhost:3000/forgetPass/"+ findUsername.get().getUsername()+"/"+ verifyToken;
-			String message = "Klik <b><a href=\"" + linkToVerify + "\">LINK</a></b> untuk ganti password anda.";	
-			message += "mohon kirim email lagi apabila gagal";
+			String message = "<p>Hello "+findUsername.get().getUsername()+",</p>";
+			message += "<p>We received a request to reset your password for your Gadget Indonesia account</p>";
+			message += "<p> <a style=\"text-decoration: none;\" href=\""+linkToVerify+"\"> <input style=\"background-color: red;width: 250px;color: white;height: 50px;border: none;border-radius: 5cm;\" type=\"button\" value=\"RESET PASSWORD\"></a> </p>";	
+			message += "<p>mohon kirim email lagi apabila gagal.</p>";
+			message += "<p>If this wasn't you,please ignore this email.</p>";
+			message += "<p>Thanks,Gadget Indonesia</p>";
 			emailUtil.sendEmail(findUsername.get().getEmail(), "Verifikasi Ganti Password", message);
 			return findUsername.get();
 		}
