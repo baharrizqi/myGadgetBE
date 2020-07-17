@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pwd.pwdproject.dao.PaketRepo;
@@ -87,9 +88,11 @@ public class PaketController {
 	
 	// delete paket
 	@DeleteMapping("/{paketId}")
-	public void deletePaket(@PathVariable int paketId) {
+	public String deletePaket(@PathVariable int paketId) {
 		Paket findPaket = paketRepo.findById(paketId).get();
-		
+		if (findPaket.getStockPaket() != findPaket.getStockPaketGudang()) {
+			throw new RuntimeException("Produk dalam paket tersebut masih dalam proses transaksi");
+		}
 		findPaket.getProducts().forEach(product -> {
 			product.setPaket(null);
 			productRepo.save(product);
@@ -98,6 +101,20 @@ public class PaketController {
 		findPaket.setProducts(null);
 		
 		paketRepo.deleteById(paketId);
+		return "Berhasil hapus paket";
+	}
+	
+	@GetMapping("/reportPaket/{orderBySold}")
+	public Iterable<Paket> getReportPaket(@RequestParam double minPrice,@RequestParam double maxPrice,@RequestParam String namaPaket,@PathVariable String orderBySold) {
+		if(maxPrice == 0) {
+			maxPrice = 99999999;
+		}
+		if(orderBySold.equals("asc")) {
+			return paketRepo.findReportByPaketASC(minPrice, maxPrice, namaPaket);
+		}
+		else {
+			return paketRepo.findReportByPaketDESC(minPrice, maxPrice, namaPaket);
+		}
 	}
 	
 }

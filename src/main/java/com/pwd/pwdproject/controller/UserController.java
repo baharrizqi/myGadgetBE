@@ -45,6 +45,15 @@ public class UserController {
 	// Post User / Regis User
 	@PostMapping
 	public User addUser(@RequestBody User user) {
+		if (user.getUsername().equals("")) {
+			throw new RuntimeException("Username masih kosong");
+		}
+		else if (user.getEmail().equals("")) {
+			throw new RuntimeException("Email masih kosong");
+		}
+		else if (user.getPassword().equals("")) {
+			throw new RuntimeException("Password masih kosong");
+		}
 		Optional<User> findUser = userRepo.findByUsername(user.getUsername());
 		
 		Optional<User> findEmail = userRepo.findByEmail(user.getEmail());
@@ -126,7 +135,7 @@ public class UserController {
 			throw new RuntimeException("Username doesn't Exist");
 		if(findUsername.get().isVerified() == true) {
 			String verifyToken = pwEncoder.encode(findUsername.get().getUsername());
-			String linkToVerify = "http://localhost:3000/forgetPass/"+ findUsername.get().getUsername()+"/"+ verifyToken;
+			String linkToVerify = "http://localhost:3000/forgetPass/"+ findUsername.get().getUsername()+"/"+ verifyToken.substring(15,20);
 			String message = "<p>Hello "+findUsername.get().getUsername()+",</p>";
 			message += "<p>We received a request to reset your password for your Gadget Indonesia account</p>";
 			message += "<p> <a style=\"text-decoration: none;\" href=\""+linkToVerify+"\"> <input style=\"background-color: red;width: 250px;color: white;height: 50px;border: none;border-radius: 5cm;\" type=\"button\" value=\"RESET PASSWORD\"></a> </p>";	
@@ -205,6 +214,6 @@ public class UserController {
 			savedUser.setPassword(null);
 			return savedUser;
 		}
-		throw new RuntimeException("Password Tidak Sama");
+		throw new RuntimeException("Password Lama Tidak Sama");
 	}
 }

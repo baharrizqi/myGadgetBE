@@ -75,11 +75,11 @@ public class ProductController {
 	public Product editProduct(@RequestBody Product product,@PathVariable int productId) {
 		Product findProduct = productRepo.findById(productId).get();
 		product.setId(productId);
-		if (findProduct.getStock() == findProduct.getStockGudang()) {
+		if (findProduct.getStock() == findProduct.getStockGudang()) { // kalau stock user dan gudang sama
 			product.setStockGudang(product.getStock());
 		}
 		else if (findProduct.getStock() != findProduct.getStockGudang()) {
-			int selisihStock = findProduct.getStockGudang() - findProduct.getStock();
+			int selisihStock = findProduct.getStockGudang() - findProduct.getStock(); // cari selisih gdng - userstock
 			product.setStockGudang(product.getStock());
 			product.setStock(product.getStock() - selisihStock);
 		}
@@ -90,7 +90,7 @@ public class ProductController {
 //			System.out.println(findProduct.getPrice());
 //			System.out.println(findProduct.getPaket().getHargaPaket());
 //			System.out.println(product.getPrice());
-			findProduct.getPaket().setHargaPaket(findProduct.getPaket().getHargaPaket() - findProduct.getPrice() + product.getPrice());
+			findProduct.getPaket().setHargaPaket(findProduct.getPaket().getHargaPaket() - findProduct.getPrice() + product.getPrice()); //set harga paket (harga pket saat itu 300 - 250 + 350) 
 			productRepo.save(product);
 			findProduct.setStock(product.getStock());
 			findProduct.setStockGudang(product.getStockGudang());
@@ -98,7 +98,7 @@ public class ProductController {
 			findProduct.getPaket().setStockPaketGudang(0);
 //			System.out.println(findProduct.getPaket().getStockPaket());
 			paketRepo.save(findProduct.getPaket());
-			findProduct.getPaket().getProducts().forEach(val ->{
+			findProduct.getPaket().getProducts().forEach(val ->{ // cari stock paket terendah 
 				if (total2 > val.getStock()) {
 					total2 = val.getStock();
 				}
@@ -115,7 +115,7 @@ public class ProductController {
 	// Delete Product
 	@DeleteMapping("/delete/{id}")
 	public void deleteProductById(@PathVariable int id) {
-		Product findProduct = productRepo.findById(id).get();
+		Product findProduct = productRepo.findById(id).get(); // cari id product , findproduct--objk
 		
 		findProduct.getCategories().forEach(category -> {
 			List<Product> categoryProduct = category.getProducts();
@@ -127,7 +127,7 @@ public class ProductController {
 		productRepo.deleteById(id);
 		
 	}
-	
+	// delete category putusin relasinya aja tidak delete data cat nya
 	@DeleteMapping("/delete/{productId}/category/{categoryId}")
 	public Product deleteCategoryinProduct(@PathVariable int productId,@PathVariable int categoryId) {
 		Product findProduct = productRepo.findById(productId).get();
@@ -183,20 +183,23 @@ public class ProductController {
 		if(findProduct.getCategories().isEmpty() ) {
 			throw new RuntimeException("Harus tambah kategori terlebih dahulu");
 		}
+//		if (findProduct.getPaket().getStockPaket() != findProduct.getPaket().getStockPaketGudang()) { // cari product yg punya paket(ambilstockpaket) tdk sama dgn prdct yg punya paket(ambilstockgudangpaket)
+//			throw new RuntimeException("product dalam paket tersebut masih dalam proses transaksi"); // prdct dlm paket masih dalam proses traksasi gabisa dipindah ke paket lain
+//		}
 		Paket findPaket = paketRepo.findById(paketId).get();
-		if(findPaket.getStockPaket() == findPaket.getStockPaketGudang()) {
+		if(findPaket.getStockPaket() == findPaket.getStockPaketGudang()) { // cari stock pkt dalam paket ==
 			total = 0;
 			total2 = 9999;
-			findPaket.setHargaPaket(0);
-			paketRepo.save(findPaket);
-			 if(findProduct.getPaket() == null) {
-				findProduct.setPaket(findPaket);
+			findPaket.setHargaPaket(0); // set harga di pkt itu 0
+			paketRepo.save(findPaket); 
+			 if(findProduct.getPaket() == null) { // cari prdct yg pnya paket == null
+				findProduct.setPaket(findPaket); // set paket dgn product itu
 				productRepo.save(findProduct);
-				findPaket.getProducts().forEach(product ->{
-					if(total2 > product.getStock()) {
-						total2 = product.getStock();
+				findPaket.getProducts().forEach(val ->{ // cari paket yg punya product , product di foreach
+					if(total2 > val.getStock()) {
+						total2 = val.getStock(); // cari stock terendah
 					}
-					total += product.getPrice();
+					total += val.getPrice(); // cari total price
 				});
 				findPaket.setHargaPaket(total);
 				findPaket.setStockPaket(total2);
@@ -229,11 +232,11 @@ public class ProductController {
 			findProduct.setPaket(findPaket); // produk setpaket jadi find paket utk paket yg baru
 			paketRepo.save(findPaket); // save paket baru
 			total2 = 9999;
-			findPaket.getProducts().forEach(product -> { // cari produk di dlm paket dgn perulangan untuk cari stock terendah
-				if (total2 > product.getStock()) {
-					total2 = product.getStock();
+			findPaket.getProducts().forEach(val -> { // cari produk di dlm paket dgn perulangan untuk cari stock terendah
+				if (total2 > val.getStock()) {
+					total2 = val.getStock();
 				}
-				total += product.getPrice(); // itung price utk paket yg baru
+				total += val.getPrice(); // itung price utk paket yg baru
 			});
 			findPaket.setHargaPaket(total); // set harga paket 
 			findPaket.setStockPaket(total2); // set stock
@@ -242,7 +245,28 @@ public class ProductController {
 			return findProduct;
 		}
 		else {
-			throw new RuntimeException("Paket masih dalam proses transaksi");
+			throw new RuntimeException("Paket masih dalam proses transaksi"); // menambahkan produk ke paket
 		}
+	}
+	
+	// untuk report
+	@GetMapping("/reportProduct/{orderBySold}")
+	public Iterable<Product> getReportProduct(@RequestParam double minPrice,@RequestParam double maxPrice,@RequestParam String namaProduk,@RequestParam String merek,@RequestParam String categoryName,@PathVariable String orderBySold) {
+		if(maxPrice == 0) {
+			maxPrice = 99999999;
+		}
+		if(orderBySold.equals("asc")) {
+			return productRepo.findReportByProductASC(minPrice, maxPrice, namaProduk, merek, categoryName);
+		}
+		else {
+			return productRepo.findReportByProductDESC(minPrice, maxPrice, namaProduk, merek, categoryName);
+		}
+	}
+	
+	
+	// untuk menampilkan yg paling laris di home screen
+	@GetMapping("/larisProduct")
+	public Iterable<Product> getLarisProduct(){
+		return productRepo.findReportByProductHomeLaris();
 	}
 }

@@ -37,6 +37,7 @@ import com.pwd.pwdproject.dao.UserRepo;
 import com.pwd.pwdproject.entity.Cart;
 import com.pwd.pwdproject.entity.Transaction;
 import com.pwd.pwdproject.entity.User;
+import com.pwd.pwdproject.util.EmailUtil;
 
 @RestController
 @RequestMapping("/transaction")
@@ -57,6 +58,9 @@ public class TransactionController {
 	@Autowired
 	private PaketRepo paketRepo;
 	
+	@Autowired
+	private EmailUtil emailUtil;
+	
 	@GetMapping("/readTransaction")
 	public Iterable<Transaction> getAllTransaction(){
 		return transactionRepo.findAll();
@@ -69,6 +73,7 @@ public class TransactionController {
 	public Iterable<Transaction> getTransactionByUserId(@PathVariable int userId) {
 		return transactionRepo.fillTransaction(userId);
 	}
+	// post trx dari cart ke transaksi
 	@PostMapping("/checkOut/{userId}")
 	public Transaction checkOutToTransaction(@RequestBody Transaction transaction,@PathVariable int userId) {
 		User findUser = userRepo.findById(userId).get();
@@ -76,7 +81,7 @@ public class TransactionController {
 		transaction.setStatusPengiriman("Belum Dikirim");
 		return transactionRepo.save(transaction);
 	}
-	
+	// upload bkt trf
 	@PostMapping("/uploadBktTrf/{id}")
 	public String uploadFile(@RequestParam("file") MultipartFile file,@PathVariable int id) throws JsonMappingException, JsonProcessingException {
 		Transaction findTransaction = transactionRepo.findById(id).get();
@@ -106,6 +111,7 @@ public class TransactionController {
 		
 		return fileDownloadUri;
 	}
+	// download gambar
 	@GetMapping("/download/{fileName:.+}")
 	public ResponseEntity<Object> downloadFile(@PathVariable String fileName){
 		Path path = Paths.get(uploadPath + fileName);
@@ -121,7 +127,7 @@ public class TransactionController {
 		
 		return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/octet-stream")).header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+ resource.getFilename()+ "\"").body(resource);
 	}
-	
+	// admin reject transaksi
 	@PutMapping("/rejectTrf/{id}")
 	public Transaction rejectTransaction(@PathVariable int id) {
 		Transaction findTransaction = transactionRepo.findById(id).get();
@@ -129,20 +135,26 @@ public class TransactionController {
 		findTransaction.setBktTrf(null);
 		return transactionRepo.save(findTransaction);
 	}
+	
+	// admin acc transaksi
 	int total2 = 9999;
+	int index = 1;
+	String message = "";
 	@PutMapping("/accTrf/{id}")
 	public Transaction accTransaction(@RequestParam String tanggalSelesai,@PathVariable int id) {
-		Transaction findTransaction = transactionRepo.findById(id).get();
+		Transaction findTransaction = transactionRepo.findById(id).get(); // cari id trx
 		findTransaction.setStatus("accepted");
 		findTransaction.setStatusPengiriman("Sudah Dikirim");
+		findTransaction.setTanggalSelesai(tanggalSelesai);
 		total2 = 9999;
-		findTransaction.getTransactionDetails().forEach(val ->{
-			if (val.getPaket() == null) {
-				if (val.getProduct().getPaket() != null) {
-					val.getProduct().setStockGudang(val.getProduct().getStock());
-					val.getProduct().setSold(val.getProduct().getSold() + val.getQuantity());
+		index = 1;
+		findTransaction.getTransactionDetails().forEach(val ->{ // get trx detail
+			if (val.getPaket() == null) { // untuk product
+				if (val.getProduct().getPaket() != null) { // product yg pya paket
+					val.getProduct().setStockGudang(val.getProduct().getStock()); // yg awalnya stck user msl 3 jadi stock gdang jadi ikut 3
+					val.getProduct().setSold(val.getProduct().getSold() + val.getQuantity()); // set sold + qty
 					productRepo.save(val.getProduct());
-					val.getProduct().getPaket().getProducts().forEach(value -> {
+					val.getProduct().getPaket().getProducts().forEach(value -> { // 
 						if (total2 > value.getStock()) {
 							total2 = value.getStock();
 						}
@@ -167,6 +179,31 @@ public class TransactionController {
 				productRepo.saveAll(val.getPaket().getProducts());
 			}
 		});
+		message = "<h2>Hello "+findTransaction.getUser().getUsername()+",</h2>";
+		message += "<img src=\"https://cdn.cnn.com/cnnnext/dam/assets/180926161922-gadget-logo-large-169.png\">";
+		message += "<h3>Pembayaran Kamu Telah Berhasil dan Barangmu sudah dikirim</h3>";
+		message += "<p>Terimakasih sudah berbelanja dan mendukung para penjual di Gadget Indonesia</p>";
+		message += "<p>Status Pembayaran : "+findTransaction.getStatus()+"</p>";
+		message += "<p>Jasa Pengiriman : "+findTransaction.getJasaPengiriman()+"</p>";
+		message += "<p>Status Pengiriman : "+findTransaction.getStatusPengiriman()+"</p>";
+		message += "<p>Tanggal Belanja : "+findTransaction.getTanggalBelanja()+"</p>";
+		message += "<p>Tanggal Selesai : "+findTransaction.getTanggalSelesai()+"</p>";
+		message += "<p>***********************DETAIL PRODUCT/PAKET*****************************</p>";
+		findTransaction.getTransactionDetails().forEach(val ->{
+			if (val.getPaket() == null) {
+				message += "<p>"+index+". " + val.getProduct().getProductName() +" Rp. "+val.getPrice()+ 
+				" ,Qty : "+val.getQuantity()+ " pcs. Total Harga : Rp. "+val.getTotalPrice()+". (Product)"+"</p>\n";
+			}
+			else {
+				message += "<p>"+index+". " + val.getPaket().getPaketName() +" Rp. "+val.getPrice()+ 
+				" ,Qty : "+val.getQuantity()+ " pcs. Total Harga : Rp. "+val.getTotalPrice()+". (Paket)"+"</p>";
+			}
+			index++;
+		});
+		message += "<p>***********************END OF PRODUCT/PAKET*****************************</p>";
+		message += "<p>If this wasn't you,please ignore this email.</p>";
+		message += "<p>Thanks,Gadget Indonesia</p>";
+		emailUtil.sendEmail(findTransaction.getUser().getEmail(), "INVOICE PEMBELIAN FROM GADGET INDONESIA", message);
 		return transactionRepo.save(findTransaction);	
 	}
 }

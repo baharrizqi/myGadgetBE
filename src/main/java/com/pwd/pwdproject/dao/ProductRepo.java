@@ -42,4 +42,13 @@ public interface ProductRepo extends JpaRepository<Product, Integer> {
 	@Query(value = "SELECT count(*) FROM product_category pc join product p on pc.product_id = p.id join category c on pc.category_id = c.id where price >= :minPrice and price <= :maxPrice and product_name like %:productName% and merek like %:merek% and c.category_name like %:categoryName%",nativeQuery = true)
 	public int getCountProduct(@Param("minPrice") double minPrice,@Param("maxPrice") double maxPrice,@Param("productName") String namaProduk,@RequestParam String merek,@Param("categoryName") String categoryName);
 	
+
+	@Query(value = "SELECT * FROM product_category pc join product p on pc.product_id = p.id join category c on pc.category_id = c.id where price >= :minPrice and price <= :maxPrice and product_name like %:productName% and merek like %:merek% and c.category_name like %:categoryName% group by product_name order by sold asc",nativeQuery = true)
+	public Iterable<Product> findReportByProductASC(@Param("minPrice") double minPrice,@Param("maxPrice") double maxPrice,@Param("productName") String namaProduk,@RequestParam String merek,@Param("categoryName") String categoryName);
+	
+	@Query(value = "SELECT * FROM product_category pc join product p on pc.product_id = p.id join category c on pc.category_id = c.id where price >= :minPrice and price <= :maxPrice and product_name like %:productName% and merek like %:merek% and c.category_name like %:categoryName% group by product_name order by sold desc",nativeQuery = true)
+	public Iterable<Product> findReportByProductDESC(@Param("minPrice") double minPrice,@Param("maxPrice") double maxPrice,@Param("productName") String namaProduk,@RequestParam String merek,@Param("categoryName") String categoryName);
+
+	@Query(value = "SELECT * FROM product order by sold desc limit 5",nativeQuery = true)
+	public Iterable<Product> findReportByProductHomeLaris();
 }
