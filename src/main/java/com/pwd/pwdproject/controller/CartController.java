@@ -52,7 +52,7 @@ public class CartController {
 	public Optional<Cart> getCartById(@PathVariable int id) {
 		return cartRepo.findById(id);
 	}
-	// add Cart
+	// klik add to Cart
 	@PostMapping("/addCart/{userId}/{productId}/{paketId}")
 	public Cart addToCart(@RequestBody Cart cart,@PathVariable int productId,@PathVariable int userId,@PathVariable int paketId) {
 		User findUser = userRepo.findById(userId).get();
@@ -123,7 +123,7 @@ public class CartController {
 		}
 		cartRepo.deleteById(cartId);
 	}
-	
+	// klik add to cart stock product/paket berkurang
 	@PutMapping("/update/{productId}/{paketId}/{userId}")
 	public String updateQtyProductPaket(@PathVariable int productId,@PathVariable int paketId,@PathVariable int userId) {
 		if (paketId == 0 && productId != 0) {	 // masuk produk
@@ -157,45 +157,4 @@ public class CartController {
 		return "Stock Paket dan Product Berhasil Terubah";
 	}
 		
-		
-		
-	
-	
-//	@PutMapping("/update/{userId}")
-//	public String updateQtyProductPaket(@PathVariable int userId) {
-//		Iterable<Cart> findUserCart = cartRepo.fillCart(userId);
-//		findUserCart.forEach(val ->{
-//			if (val.getPaket()==null) {
-//				Product findProduct = productRepo.findById(val.getProduct().getId()).get();
-//				if (findProduct.getPaket() == null) {
-//					findProduct.setStock(findProduct.getStock() - val.getQuantity());
-//					productRepo.save(findProduct);
-//				}
-//				else {
-//					findProduct.setStock(findProduct.getStock() - val.getQuantity());
-////					findProduct.getPaket().setStockPaket(0);
-////					paketRepo.save(findProduct.getPaket());
-//					total2 = 9999;
-//					findProduct.getPaket().getProducts().forEach(value ->{
-//						if (total2 > value.getStock()) {
-//							total2 = value.getStock();
-//						}
-//					});
-//					findProduct.getPaket().setStockPaket(total2);
-//					paketRepo.save(findProduct.getPaket());
-//					productRepo.save(findProduct);				
-//				}
-//			}
-//			else {
-//				Paket findPaket = paketRepo.findById(val.getPaket().getId()).get();
-//				findPaket.setStockPaket(findPaket.getStockPaket() - val.getQuantity());
-//				findPaket.getProducts().forEach(value ->{
-//					value.setStock(value.getStock() - val.getQuantity());
-//				});
-//				productRepo.saveAll(findPaket.getProducts());
-//				paketRepo.save(findPaket);
-//			}
-//		});
-//		return "Stock Paket dan Product Berhasil Terubah";
-//	}
 }

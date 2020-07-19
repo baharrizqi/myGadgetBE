@@ -138,6 +138,7 @@ public class TransactionController {
 	
 	// admin acc transaksi
 	int total2 = 9999;
+	int total3 = 9999;
 	int index = 1;
 	String message = "";
 	@PutMapping("/accTrf/{id}")
@@ -147,34 +148,38 @@ public class TransactionController {
 		findTransaction.setStatusPengiriman("Sudah Dikirim");
 		findTransaction.setTanggalSelesai(tanggalSelesai);
 		total2 = 9999;
+		total3 = 9999;
 		index = 1;
 		findTransaction.getTransactionDetails().forEach(val ->{ // get trx detail
 			if (val.getPaket() == null) { // untuk product
 				if (val.getProduct().getPaket() != null) { // product yg pya paket
-					val.getProduct().setStockGudang(val.getProduct().getStock()); // yg awalnya stck user msl 3 jadi stock gdang jadi ikut 3
+					val.getProduct().setStockGudang(val.getProduct().getStockGudang() - val.getQuantity()); // yg awalnya stck user msl 3 jadi stock gdang jadi ikut 3
 					val.getProduct().setSold(val.getProduct().getSold() + val.getQuantity()); // set sold + qty
 					productRepo.save(val.getProduct());
-					val.getProduct().getPaket().getProducts().forEach(value -> { // 
+					val.getProduct().getPaket().getProducts().forEach(value -> { // cari stock terendah utk disimpan stock ke paket
 						if (total2 > value.getStock()) {
 							total2 = value.getStock();
 						}
+						if (total3 > value.getStockGudang()) {
+							total3 = value.getStockGudang();
+						}
 					});
-					val.getProduct().getPaket().setStockPaket(total2);
-					val.getProduct().getPaket().setStockPaketGudang(total2);
+					val.getProduct().getPaket().setStockPaket(total2); // set stock product yang punya paket
+					val.getProduct().getPaket().setStockPaketGudang(total3);
 					paketRepo.save(val.getProduct().getPaket());
 				}
 				else {
-					val.getProduct().setStockGudang(val.getProduct().getStock());
-					val.getProduct().setSold(val.getProduct().getSold() + val.getQuantity());
+					val.getProduct().setStockGudang(val.getProduct().getStockGudang() - val.getQuantity()); // set stock gdang product yg ga punya paket
+					val.getProduct().setSold(val.getProduct().getSold() + val.getQuantity()); // set sold product
 					productRepo.save(val.getProduct());
 				}
 			}
 			else {
-				val.getPaket().setStockPaketGudang(val.getPaket().getStockPaket());
-				val.getPaket().setSoldPaket(val.getPaket().getSoldPaket() + val.getQuantity());
+				val.getPaket().setStockPaketGudang(val.getPaket().getStockPaketGudang() - val.getQuantity()); // set stock paket gudang - get qty
+				val.getPaket().setSoldPaket(val.getPaket().getSoldPaket() + val.getQuantity()); // set sold paket ( get sold paket + get qty) 
 				paketRepo.save(val.getPaket());
-				val.getPaket().getProducts().forEach(value -> {
-					value.setStockGudang(value.getStockGudang() - val.getQuantity());
+				val.getPaket().getProducts().forEach(value -> { // set stock gudang product yg ada d dlam paket
+					value.setStockGudang(value.getStockGudang() - val.getQuantity()); // menjadi get stock gudang - get qty
 				});
 				productRepo.saveAll(val.getPaket().getProducts());
 			}

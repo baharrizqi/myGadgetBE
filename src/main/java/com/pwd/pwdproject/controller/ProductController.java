@@ -38,6 +38,7 @@ public class ProductController {
 	
 	double total = 0;
 	int total2 = 9999;
+	int total3 = 9999;
 	
 	@GetMapping("/readProduct")
 	public Iterable<Product> getAllProduct(){
@@ -122,10 +123,33 @@ public class ProductController {
 			categoryProduct.remove(findProduct);
 			categoryRepo.save(category);
 		});
-		findProduct.setPaket(null);
 		findProduct.setCategories(null);
-		productRepo.deleteById(id);
-		
+		if (findProduct.getPaket() == null) {
+			productRepo.deleteById(id);
+		}
+		findProduct.getPaket().setHargaPaket(findProduct.getPaket().getHargaPaket() - findProduct.getPrice());
+		int idPaket = findProduct.getPaket().getId();
+		findProduct.setPaket(null);
+		Paket findPaket = paketRepo.findById(idPaket).get();
+		total2 = 99999;
+		total3 = 99999;
+		productRepo.save(findProduct);
+		findPaket.getProducts().forEach(val->{
+			if (total2 > val.getStock()) {
+				total2 = val.getStock();
+			}
+			if (total3 > val.getStockGudang()) {
+				total3 = val.getStockGudang();
+			}
+		});
+		findPaket.setStockPaket(total2);
+		findPaket.setStockPaketGudang(total3);
+		if (findPaket.getHargaPaket() == 0) {
+			findPaket.setStockPaket(0);
+			findPaket.setStockPaketGudang(0);
+		}
+		paketRepo.save(findPaket);
+		productRepo.delete(findProduct);
 	}
 	// delete category putusin relasinya aja tidak delete data cat nya
 	@DeleteMapping("/delete/{productId}/category/{categoryId}")

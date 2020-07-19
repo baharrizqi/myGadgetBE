@@ -104,7 +104,22 @@ public class UserController {
 		
 		userRepo.save(findUser);
 		
-		return "Sukses!";
+		return "Sukses! akun anda terverifikasi";
+	}
+	// untuk kirim email lagi untuk verifikasi di profile screen
+	@GetMapping("/verifyProfile/{username}")
+	public String verifyUserFromProfile(@PathVariable String username) {
+		User findUser = userRepo.findByUsername(username).get();
+		String linkToVerify = "http://localhost:8080/users/verify/" + findUser.getUsername() + "?token=" + findUser.getVerifyToken();
+		String message = "<h1>Selamat! Registrasi Berhasil</h1>\n";
+		message += "Hello, " + findUser.getUsername();
+		message += "<p>Please verify your account below for the Gadget Indonesia</p>";
+		message += "<p> <a style=\"text-decoration: none;\" href=\""+linkToVerify+"\"> <input style=\"background-color: red;width: 250px;color: white;height: 50px;border: none;border-radius: 5cm;\" type=\"button\" value=\"VERIFY ACCOUNT\"></a> </p>";
+		message += "<p>If this wasn't you,please ignore this email.</p>";
+		message += "<p>Thanks,Gadget Indonesia</p>";
+		emailUtil.sendEmail(findUser.getEmail(), "Registrasi Akun", message);
+		
+		return "Silakan Cek Email";
 	}
 	
 	// login user
